@@ -1,0 +1,6 @@
+node_modules
+.next
+.env
+.env.local
+backend/src/screenshots/*
+!backend/src/screenshots/.keep
