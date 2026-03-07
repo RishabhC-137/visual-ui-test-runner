@@ -20,37 +20,81 @@ export default function Home() {
 
     setLoading(true);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/run-test`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url,
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/run-test`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url,
+            testName,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Test failed");
+        setLoading(false);
+        return;
+      }
+
+      const newResult = {
+        ...data,
         testName,
-      }),
-    });
+        timestamp: new Date().toLocaleString(),
+      };
 
-    const data = await res.json();
-
-    const newResult = {
-      ...data,
-      timestamp: new Date().toLocaleString(),
-    };
-
-    setHistory((prev) => [newResult, ...prev]);
+      setHistory((prev) => [newResult, ...prev]);
+    } catch {
+      alert("Something went wrong running the test");
+    }
 
     setLoading(false);
   };
 
+  // Group history by testName
+  const groupedTests: Record<string, TestResult[]> = {};
+
+  history.forEach((test) => {
+    const key = test.testName || "Unknown";
+
+    if (!groupedTests[key]) {
+      groupedTests[key] = [];
+    }
+
+    groupedTests[key].push(test);
+  });
+
   return (
-    <main className="min-h-screen bg-slate-50 py-12 px-6">
+    <main className="min-h-screen bg-slate-50 py-12 px-6 relative">
+
+      {/* Header */}
+
+      <div className="max-w-5xl mx-auto flex justify-between items-center mb-10">
+        <h1 className="text-xl font-semibold text-slate-800">
+          Visual UI Test Runner
+        </h1>
+
+        <a
+          href="https://github.com/RishabhC-137/visual-ui-test-runner"
+          target="_blank"
+          className="text-indigo-600 text-sm hover:underline"
+        >
+          GitHub
+        </a>
+      </div>
+
       {/* Form */}
 
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border">
-        <h1 className="text-2xl font-semibold mb-6 text-slate-800">
-          Visual UI Test Runner
-        </h1>
+        <h2 className="text-lg font-semibold mb-6 text-slate-800">
+          Run Visual Test
+        </h2>
 
         <div className="space-y-4">
           <input
@@ -77,10 +121,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* History */}
+      {/* Test History */}
 
-      <div className="max-w-3xl mx-auto mt-10">
-        <h2 className="text-xl font-semibold mb-5 text-slate-700">
+      <div className="max-w-5xl mx-auto mt-12">
+        <h2 className="text-xl font-semibold mb-6 text-slate-700">
           Test History
         </h2>
 
@@ -88,33 +132,68 @@ export default function Home() {
           <p className="text-slate-500 text-sm">No tests run yet.</p>
         )}
 
-        {history.map((test, index) => (
-          <div
-            key={index}
-            className="bg-white border rounded-xl p-6 mb-5 shadow-sm"
-          >
-            <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold text-slate-800">{test.testName}</p>
+        {Object.entries(groupedTests).map(([name, tests]) => (
 
-              {test.diffPercent !== undefined && (
-                <span className="text-sm px-3 py-1 bg-indigo-50 text-indigo-600 rounded">
-                  Diff {test.diffPercent.toFixed(2)}%
-                </span>
-              )}
+          <div
+            key={name}
+            className="bg-white border rounded-xl p-6 mb-8 shadow-sm"
+          >
+
+            {/* Test Name */}
+
+            <h3 className="font-semibold text-slate-800 mb-4">
+              {name}
+            </h3>
+
+            <div className="space-y-6">
+
+              {tests.map((test, index) => (
+
+                <div key={index}>
+
+                  <div className="flex justify-between mb-2">
+
+                    <span className="text-xs text-slate-500">
+                      {test.timestamp}
+                    </span>
+
+                    {test.diffPercent !== undefined && (
+                      <span className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded">
+                        Diff {test.diffPercent.toFixed(2)}%
+                      </span>
+                    )}
+
+                  </div>
+
+                  {test.diffPercent === undefined ? (
+
+                    <p className="text-sm text-slate-500">
+                      Baseline created. Run again to see differences.
+                    </p>
+
+                  ) : (
+
+                    <div className="border rounded-md overflow-hidden">
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/screenshots/${test.testName}/diff.png?t=${Date.now()}`}
+                        className="w-full"
+                        alt="visual diff"
+                      />
+                    </div>
+
+                  )}
+
+                </div>
+
+              ))}
+
             </div>
 
-            {test.diffPercent !== undefined && (
-              <img
-                src={`${process.env.NEXT_PUBLIC_API_URL}/screenshots/${test.testName}/diff.png`}
-                className="border rounded-md mt-2"
-                alt="visual diff"
-              />
-            )}
-
-            <p className="text-xs text-slate-500 mt-3">{test.timestamp}</p>
           </div>
+
         ))}
       </div>
+
     </main>
   );
 }
