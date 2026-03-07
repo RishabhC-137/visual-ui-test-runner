@@ -75,19 +75,7 @@ export default function Home() {
 
       {/* Header */}
 
-      <div className="max-w-5xl mx-auto flex justify-between items-center mb-10">
-        <h1 className="text-xl font-semibold text-slate-800">
-          Visual UI Test Runner
-        </h1>
-
-        <a
-          href="https://github.com/RishabhC-137/visual-ui-test-runner"
-          target="_blank"
-          className="text-indigo-600 text-sm hover:underline"
-        >
-          GitHub
-        </a>
-      </div>
+    
 
       {/* Form */}
 
